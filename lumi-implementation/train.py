@@ -138,14 +138,15 @@ optimizer = torch.optim.Adam(
 # Training
 # ------------------------
 
-epochs = 10
+best_val_loss = float("inf")
+
+epochs = 30
 
 for epoch in range(epochs):
 
     model.train()
 
     epoch_loss = 0
-
     epoch_mae = 0
     epoch_mse = 0
     epoch_ic = 0
@@ -276,6 +277,23 @@ for epoch in range(epochs):
     print(
         f"Rank IC  : {val_metrics['rank_ic']:.6f}"
     )
+
+    # ------------------------
+    # Save Best Model
+    # ------------------------
+
+    if val_metrics["loss"] < best_val_loss:
+
+        best_val_loss = val_metrics["loss"]
+
+        torch.save(
+            model.state_dict(),
+            "best_model.pth"
+        )
+
+        print(
+            "Saved Best Model"
+        )
 
 
 # ------------------------
