@@ -333,3 +333,16 @@ print(
 print(
     f"Rank IC  : {test_metrics['rank_ic']:.6f}"
 )
+
+# ------------------------
+# Save Final Model
+# ------------------------
+
+torch.save(
+    model.state_dict(),
+    "final_model.pth"
+)
+
+print(
+    "\nFinal model saved as final_model.pth"
+)
