@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from attention_layer import GraphAttentionLayer
+from dynamic_graph import DynamicGraphBuilder
+from temporal_encoder import TemporalSequenceBuilder
+from temporal_attention import TemporalAttention
 
 
 class LUMIStage1(nn.Module):
@@ -14,9 +17,27 @@ class LUMIStage1(nn.Module):
     ):
         super().__init__()
 
+        self.dynamic_graph = DynamicGraphBuilder(
+            feature_dim=1,
+            hidden_dim=16
+        )
+
         self.gat = GraphAttentionLayer(
             in_features=1,
             out_features=8
+        )
+
+        self.temporal_encoder = (
+            TemporalSequenceBuilder(
+                self.gat,
+                self.dynamic_graph
+            )
+        )
+
+        self.temporal_attention = (
+            TemporalAttention(
+                feature_dim=8
+            )
         )
 
         self.fc1 = nn.Linear(
@@ -32,34 +53,37 @@ class LUMIStage1(nn.Module):
     def forward(
         self,
         x,
-        semantic_graph
+        cluster_matrix
     ):
 
-        # x:
+        # x
         # [B,20,542,1]
 
-        x = x[:, -1, :, :]
-
-        # [B,542,1]
-
-        x = self.gat(
+        H = self.temporal_encoder(
             x,
-            semantic_graph
+            cluster_matrix
+        )
+
+        # H
+        # [B,20,542,8]
+
+        H = self.temporal_attention(
+            H
         )
 
         # [B,542,8]
 
-        batch_size = x.shape[0]
+        batch_size = H.shape[0]
 
-        x = x.reshape(
+        H = H.reshape(
             batch_size,
             -1
         )
 
-        x = F.relu(
-            self.fc1(x)
+        H = F.relu(
+            self.fc1(H)
         )
 
-        x = self.fc2(x)
+        H = self.fc2(H)
 
-        return x
+        return H

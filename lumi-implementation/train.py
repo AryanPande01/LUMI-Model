@@ -1,10 +1,11 @@
 from dataset import StockDataset
-from graph_builder import build_adjacency
 from model import LUMIStage1
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 import torch.nn as nn
+
 
 # ------------------------
 # Dataset
@@ -18,6 +19,7 @@ dataset = StockDataset(
 
 print("Dataset Size:", len(dataset))
 
+
 # ------------------------
 # Dataloader
 # ------------------------
@@ -28,24 +30,25 @@ train_loader = DataLoader(
     shuffle=True
 )
 
+
 # ------------------------
-# Graphs
+# Cluster Matrix
 # ------------------------
 
-industry_graph = build_adjacency(
-    "data/LSE/graph_data/industry_adjacency.csv"
+cluster_matrix = np.load(
+    "cluster_matrix.npy"
 )
 
-wiki_graph = build_adjacency(
-    "data/LSE/graph_data/wiki_adjacency.csv"
-)
-
-semantic_graph = industry_graph + wiki_graph
-
-semantic_graph = torch.tensor(
-    semantic_graph,
+cluster_matrix = torch.tensor(
+    cluster_matrix,
     dtype=torch.float32
 )
+
+print(
+    "Cluster Matrix Shape:",
+    cluster_matrix.shape
+)
+
 
 # ------------------------
 # Model
@@ -61,6 +64,7 @@ optimizer = torch.optim.Adam(
     model.parameters(),
     lr=0.001
 )
+
 
 # ------------------------
 # Training
@@ -80,7 +84,7 @@ for epoch in range(epochs):
 
         pred = model(
             x,
-            semantic_graph
+            cluster_matrix
         )
 
         loss = criterion(
@@ -94,7 +98,10 @@ for epoch in range(epochs):
 
         epoch_loss += loss.item()
 
-    avg_loss = epoch_loss / len(train_loader)
+    avg_loss = (
+        epoch_loss /
+        len(train_loader)
+    )
 
     print(
         f"Epoch {epoch+1}/{epochs} | Loss = {avg_loss:.6f}"
