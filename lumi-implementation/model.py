@@ -6,6 +6,7 @@ from attention_layer import GraphAttentionLayer
 from dynamic_graph import DynamicGraphBuilder
 from temporal_encoder import TemporalSequenceBuilder
 from temporal_attention import TemporalAttention
+from long_short_builder import LongShortBuilder
 
 
 class LUMIStage1(nn.Module):
@@ -17,15 +18,27 @@ class LUMIStage1(nn.Module):
     ):
         super().__init__()
 
+        # ------------------
+        # Dynamic Graph
+        # ------------------
+
         self.dynamic_graph = DynamicGraphBuilder(
             feature_dim=1,
             hidden_dim=16
         )
 
+        # ------------------
+        # Spatial Attention
+        # ------------------
+
         self.gat = GraphAttentionLayer(
             in_features=1,
             out_features=8
         )
+
+        # ------------------
+        # Temporal Encoder
+        # ------------------
 
         self.temporal_encoder = (
             TemporalSequenceBuilder(
@@ -34,18 +47,34 @@ class LUMIStage1(nn.Module):
             )
         )
 
+        # ------------------
+        # Temporal Attention
+        # ------------------
+
         self.temporal_attention = (
             TemporalAttention(
                 feature_dim=8
             )
         )
 
-        self.fc1 = nn.Linear(
-            num_nodes * 8,
+        # ------------------
+        # Short / Long Builder
+        # ------------------
+
+        self.long_short_builder = (
+            LongShortBuilder()
+        )
+
+        # ------------------
+        # Fusion Layer
+        # ------------------
+
+        self.fusion = nn.Linear(
+            num_nodes * 16,
             hidden_dim
         )
 
-        self.fc2 = nn.Linear(
+        self.output_layer = nn.Linear(
             hidden_dim,
             num_nodes
         )
@@ -56,34 +85,76 @@ class LUMIStage1(nn.Module):
         cluster_matrix
     ):
 
-        # x
-        # [B,20,542,1]
+        # ------------------
+        # Build Short & Long
+        # ------------------
 
-        H = self.temporal_encoder(
-            x,
+        short_seq, long_seq = (
+            self.long_short_builder(
+                x
+            )
+        )
+
+        # ------------------
+        # Short Branch
+        # ------------------
+
+        H_short = self.temporal_encoder(
+            short_seq,
             cluster_matrix
         )
 
-        # H
-        # [B,20,542,8]
-
-        H = self.temporal_attention(
-            H
+        H_short = self.temporal_attention(
+            H_short
         )
 
-        # [B,542,8]
+        # ------------------
+        # Long Branch
+        # ------------------
 
-        batch_size = H.shape[0]
+        H_long = self.temporal_encoder(
+            long_seq,
+            cluster_matrix
+        )
 
-        H = H.reshape(
+        H_long = self.temporal_attention(
+            H_long
+        )
+
+        # ------------------
+        # Flatten
+        # ------------------
+
+        batch_size = H_short.shape[0]
+
+        H_short = H_short.reshape(
             batch_size,
             -1
         )
 
-        H = F.relu(
-            self.fc1(H)
+        H_long = H_long.reshape(
+            batch_size,
+            -1
         )
 
-        H = self.fc2(H)
+        # ------------------
+        # Fusion
+        # ------------------
+
+        H = torch.cat(
+            [
+                H_short,
+                H_long
+            ],
+            dim=1
+        )
+
+        H = F.relu(
+            self.fusion(H)
+        )
+
+        H = self.output_layer(
+            H
+        )
 
         return H

@@ -1,6 +1,16 @@
 from dataset import StockDataset
 from model import LUMIStage1
 
+from data_splitter import create_splits
+from evaluate import evaluate_model
+
+from metrics import (
+    mae,
+    mse,
+    information_coefficient,
+    rank_ic
+)
+
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -13,11 +23,15 @@ from tqdm import tqdm
 # ------------------------
 
 device = torch.device(
-    "cuda" if torch.cuda.is_available()
+    "cuda"
+    if torch.cuda.is_available()
     else "cpu"
 )
 
-print("Using Device:", device)
+print(
+    "Using Device:",
+    device
+)
 
 
 # ------------------------
@@ -30,17 +44,58 @@ dataset = StockDataset(
     lookback=20
 )
 
-print("Dataset Size:", len(dataset))
+print(
+    "Dataset Size:",
+    len(dataset)
+)
 
 
 # ------------------------
-# Dataloader
+# Dataset Split
+# ------------------------
+
+train_set, val_set, test_set = (
+    create_splits(
+        dataset
+    )
+)
+
+print(
+    "Train Size:",
+    len(train_set)
+)
+
+print(
+    "Val Size:",
+    len(val_set)
+)
+
+print(
+    "Test Size:",
+    len(test_set)
+)
+
+
+# ------------------------
+# Dataloaders
 # ------------------------
 
 train_loader = DataLoader(
-    dataset,
+    train_set,
     batch_size=2,
     shuffle=True
+)
+
+val_loader = DataLoader(
+    val_set,
+    batch_size=2,
+    shuffle=False
+)
+
+test_loader = DataLoader(
+    test_set,
+    batch_size=2,
+    shuffle=False
 )
 
 
@@ -83,13 +138,20 @@ optimizer = torch.optim.Adam(
 # Training
 # ------------------------
 
-epochs = 1
+epochs = 10
 
 for epoch in range(epochs):
 
     model.train()
 
     epoch_loss = 0
+
+    epoch_mae = 0
+    epoch_mse = 0
+    epoch_ic = 0
+    epoch_rank_ic = 0
+
+    batches = 0
 
     for x, y in tqdm(
         train_loader,
@@ -117,11 +179,139 @@ for epoch in range(epochs):
 
         epoch_loss += loss.item()
 
-    avg_loss = (
-        epoch_loss /
-        len(train_loader)
+        epoch_mae += mae(
+            pred.detach(),
+            y.detach()
+        )
+
+        epoch_mse += mse(
+            pred.detach(),
+            y.detach()
+        )
+
+        epoch_ic += (
+            information_coefficient(
+                pred.detach(),
+                y.detach()
+            )
+        )
+
+        epoch_rank_ic += (
+            rank_ic(
+                pred.detach(),
+                y.detach()
+            )
+        )
+
+        batches += 1
+
+    # ------------------------
+    # Train Metrics
+    # ------------------------
+
+    print()
+
+    print(
+        f"Epoch {epoch+1}/{epochs}"
     )
 
     print(
-        f"Epoch {epoch+1}/{epochs} | Loss = {avg_loss:.6f}"
+        "\nTRAIN"
     )
+
+    print(
+        f"Loss     : {epoch_loss/batches:.6f}"
+    )
+
+    print(
+        f"MAE      : {epoch_mae/batches:.6f}"
+    )
+
+    print(
+        f"MSE      : {epoch_mse/batches:.6f}"
+    )
+
+    print(
+        f"IC       : {epoch_ic/batches:.6f}"
+    )
+
+    print(
+        f"Rank IC  : {epoch_rank_ic/batches:.6f}"
+    )
+
+    # ------------------------
+    # Validation Metrics
+    # ------------------------
+
+    val_metrics = evaluate_model(
+        model,
+        val_loader,
+        cluster_matrix,
+        criterion,
+        device
+    )
+
+    print()
+
+    print(
+        "VALIDATION"
+    )
+
+    print(
+        f"Loss     : {val_metrics['loss']:.6f}"
+    )
+
+    print(
+        f"MAE      : {val_metrics['mae']:.6f}"
+    )
+
+    print(
+        f"MSE      : {val_metrics['mse']:.6f}"
+    )
+
+    print(
+        f"IC       : {val_metrics['ic']:.6f}"
+    )
+
+    print(
+        f"Rank IC  : {val_metrics['rank_ic']:.6f}"
+    )
+
+
+# ------------------------
+# Final Test Evaluation
+# ------------------------
+
+print()
+
+print(
+    "FINAL TEST EVALUATION"
+)
+
+test_metrics = evaluate_model(
+    model,
+    test_loader,
+    cluster_matrix,
+    criterion,
+    device
+)
+
+print(
+    f"Loss     : {test_metrics['loss']:.6f}"
+)
+
+print(
+    f"MAE      : {test_metrics['mae']:.6f}"
+)
+
+print(
+    f"MSE      : {test_metrics['mse']:.6f}"
+)
+
+print(
+    f"IC       : {test_metrics['ic']:.6f}"
+)
+
+print(
+    f"Rank IC  : {test_metrics['rank_ic']:.6f}"
+)
