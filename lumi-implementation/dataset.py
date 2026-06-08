@@ -16,42 +16,95 @@ class StockDataset(Dataset):
         # -----------------------
         # Load price data
         # -----------------------
-        price_df = pd.read_csv(price_csv)
 
-        # Remove fake first row
-        price_df = price_df.iloc[1:].reset_index(drop=True)
+        price_df = pd.read_csv(
+            price_csv
+        )
 
-        self.timestamps = price_df["Timestamp"]
+        # remove fake row
+        price_df = (
+            price_df.iloc[1:]
+            .reset_index(drop=True)
+        )
 
-        self.price_data = price_df.drop(
-            columns=["Unnamed: 0", "Timestamp"]
-        ).values.astype(np.float32)
+        self.timestamps = (
+            price_df["Timestamp"]
+        )
+
+        self.price_data = (
+            price_df.drop(
+                columns=[
+                    "Unnamed: 0",
+                    "Timestamp"
+                ]
+            )
+            .values
+            .astype(np.float32)
+        )
 
         # -----------------------
-        # Load ground truth data
+        # Load GT data
         # -----------------------
-        gt_df = pd.read_csv(gt_csv)
 
-        # Remove fake first row
-        gt_df = gt_df.iloc[1:].reset_index(drop=True)
+        gt_df = pd.read_csv(
+            gt_csv
+        )
 
-        self.gt_data = gt_df.drop(
-            columns=["Unnamed: 0", "Timestamp"]
-        ).values.astype(np.float32)
+        # remove:
+        # row 0 -> fake row
+        # row 1 -> price row
+        gt_df = (
+            gt_df.iloc[2:]
+            .reset_index(drop=True)
+        )
+
+        self.gt_data = (
+            gt_df.drop(
+                columns=[
+                    "Unnamed: 0",
+                    "Timestamp"
+                ]
+            )
+            .values
+            .astype(np.float32)
+        )
 
         self.lookback = lookback
 
+        # -----------------------
+        # Align lengths
+        # -----------------------
+
+        min_len = min(
+            len(self.price_data),
+            len(self.gt_data)
+        )
+
+        self.price_data = (
+            self.price_data[:min_len]
+        )
+
+        self.gt_data = (
+            self.gt_data[:min_len]
+        )
+
     def __len__(self):
-        return len(self.price_data) - self.lookback
 
-    def __getitem__(self, idx):
+        return (
+            len(self.price_data)
+            - self.lookback
+        )
 
-        # Past 20 days prices
+    def __getitem__(
+        self,
+        idx
+    ):
+
         x = self.price_data[
-            idx : idx + self.lookback
+            idx :
+            idx + self.lookback
         ]
 
-        # Next-day return target
         y = self.gt_data[
             idx + self.lookback
         ]
