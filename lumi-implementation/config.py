@@ -1,0 +1,9 @@
+DATASET = "LSE"
+
+LOOKBACK = 20
+
+BATCH_SIZE = 32
+
+HIDDEN_DIM = 64
+
+DEVICE = "cuda"
