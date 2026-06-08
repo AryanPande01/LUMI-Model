@@ -12,6 +12,7 @@ class TemporalSequenceBuilder(nn.Module):
         super().__init__()
 
         self.graph_layer = graph_layer
+
         self.dynamic_graph_builder = (
             dynamic_graph_builder
         )
@@ -38,12 +39,19 @@ class TemporalSequenceBuilder(nn.Module):
                 cluster_matrix
             )
 
+            # ------------------
+            # FIX:
+            # Use full batch graph
+            # ------------------
+
             Ht = self.graph_layer(
                 xt,
-                At[0]
+                At
             )
 
-            outputs.append(Ht)
+            outputs.append(
+                Ht
+            )
 
         H = torch.stack(
             outputs,
