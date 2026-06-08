@@ -83,7 +83,7 @@ print(
 train_loader = DataLoader(
     train_set,
     batch_size=2,
-    shuffle=True
+    shuffle=false
 )
 
 val_loader = DataLoader(

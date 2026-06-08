@@ -1,37 +1,43 @@
-from torch.utils.data import (
-    random_split
-)
+from torch.utils.data import Subset
 
 
-def create_splits(
-    dataset
-):
+def create_splits(dataset):
 
     total = len(dataset)
 
-    train_size = int(
+    train_end = int(
         total * 0.70
     )
 
-    val_size = int(
-        total * 0.15
+    val_end = int(
+        total * 0.85
     )
 
-    test_size = (
-        total
-        - train_size
-        - val_size
+    train_indices = list(
+        range(0, train_end)
     )
 
-    train_set, val_set, test_set = (
-        random_split(
-            dataset,
-            [
-                train_size,
-                val_size,
-                test_size
-            ]
-        )
+    val_indices = list(
+        range(train_end, val_end)
+    )
+
+    test_indices = list(
+        range(val_end, total)
+    )
+
+    train_set = Subset(
+        dataset,
+        train_indices
+    )
+
+    val_set = Subset(
+        dataset,
+        val_indices
+    )
+
+    test_set = Subset(
+        dataset,
+        test_indices
     )
 
     return (
@@ -39,4 +45,3 @@ def create_splits(
         val_set,
         test_set
     )
-    
