@@ -2,31 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-class SemanticGraphLayer(nn.Module):
-
-    def __init__(self, num_nodes):
-        super().__init__()
-
-        self.num_nodes = num_nodes
-
-    def forward(self, x, adjacency):
-
-        # x: [B, N]
-        # adjacency: [N, N]
-
-        degree = adjacency.sum(dim=1)
-
-        degree = degree + 1e-6
-
-        aggregated = torch.matmul(
-            x,
-            adjacency.T
-        )
-
-        aggregated = aggregated / degree
-
-        return aggregated
+from attention_layer import GraphAttentionLayer
 
 
 class LUMIStage1(nn.Module):
@@ -38,12 +14,13 @@ class LUMIStage1(nn.Module):
     ):
         super().__init__()
 
-        self.graph_layer = SemanticGraphLayer(
-            num_nodes
+        self.gat = GraphAttentionLayer(
+            in_features=1,
+            out_features=8
         )
 
         self.fc1 = nn.Linear(
-            num_nodes,
+            num_nodes * 8,
             hidden_dim
         )
 
@@ -58,17 +35,25 @@ class LUMIStage1(nn.Module):
         semantic_graph
     ):
 
-        # x shape:
-        # [B, 20, 542, 1]
+        # x:
+        # [B,20,542,1]
 
-        x = x.squeeze(-1)
+        x = x[:, -1, :, :]
 
-        # Take latest day from lookback window
-        x = x[:, -1, :]
+        # [B,542,1]
 
-        x = self.graph_layer(
+        x = self.gat(
             x,
             semantic_graph
+        )
+
+        # [B,542,8]
+
+        batch_size = x.shape[0]
+
+        x = x.reshape(
+            batch_size,
+            -1
         )
 
         x = F.relu(
