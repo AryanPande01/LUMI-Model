@@ -10,7 +10,7 @@ class StockDataset(Dataset):
         self,
         price_csv,
         gt_csv,
-        lookback=20
+        lookback=60
     ):
 
         # -----------------------
