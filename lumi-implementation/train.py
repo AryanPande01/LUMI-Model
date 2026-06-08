@@ -126,7 +126,7 @@ model = LUMIStage1(
     num_nodes=542
 ).to(device)
 
-criterion = nn.L1Loss()
+criterion = nn.MSELoss()
 
 optimizer = torch.optim.Adam(
     model.parameters(),
