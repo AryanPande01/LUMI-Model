@@ -1,10 +1,9 @@
-# inspect_prediction_distribution.py
-
 import torch
 import numpy as np
 
 from dataset import StockDataset
 from model import LUMIStage1
+from static_graph_loader import load_static_graphs
 
 dataset = StockDataset(
     "data/LSE/data/price_data.csv",
@@ -19,6 +18,10 @@ cluster_matrix = np.load(
 cluster_matrix = torch.tensor(
     cluster_matrix,
     dtype=torch.float32
+)
+
+industry_graph, wiki_graph = load_static_graphs(
+    "cpu"
 )
 
 model = LUMIStage1()
@@ -42,7 +45,9 @@ with torch.no_grad():
 
         p = model(
             x.unsqueeze(0),
-            cluster_matrix
+            cluster_matrix,
+            industry_graph,
+            wiki_graph
         )
 
         preds.append(

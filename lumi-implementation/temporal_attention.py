@@ -33,6 +33,13 @@ class TemporalAttention(nn.Module):
 
         B, T, N, D = H.shape
 
+        H = H.permute(
+            0,
+            2,
+            1,
+            3
+        )
+
         H = H.reshape(
             B * N,
             T,
@@ -50,7 +57,9 @@ class TemporalAttention(nn.Module):
             K.transpose(-1, -2)
         )
 
-        scores = scores / (D ** 0.5)
+        scores = scores / (
+            D ** 0.5
+        )
 
         alpha = torch.softmax(
             scores,
@@ -62,15 +71,16 @@ class TemporalAttention(nn.Module):
             V
         )
 
+        # ----------------------
+        # IMPORTANT CHANGE
+        # ----------------------
+
+        out = out[:, -1, :]
+
         out = out.reshape(
             B,
             N,
-            T,
             D
-        )
-
-        out = out.mean(
-            dim=2
         )
 
         return out
