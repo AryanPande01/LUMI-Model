@@ -12,6 +12,8 @@ def evaluate_model(
     model,
     loader,
     cluster_matrix,
+    industry_graph,
+    wiki_graph,
     criterion,
     device
 ):
@@ -35,7 +37,9 @@ def evaluate_model(
 
             pred = model(
                 x,
-                cluster_matrix
+                cluster_matrix,
+                industry_graph,
+                wiki_graph
             )
 
             loss = criterion(

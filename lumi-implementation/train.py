@@ -4,6 +4,8 @@ from model import LUMIStage1
 from data_splitter import create_splits
 from evaluate import evaluate_model
 
+from static_graph_loader import load_static_graphs
+
 from metrics import (
     mae,
     mse,
@@ -117,7 +119,29 @@ print(
     cluster_matrix.shape
 )
 
+industry_graph, wiki_graph = (
+    load_static_graphs(device)
+)
 
+print(
+    "Industry Graph Shape:",
+    industry_graph.shape
+)
+
+print(
+    "Wiki Graph Shape:",
+    wiki_graph.shape
+)
+
+print(
+    "Industry Non-Zero:",
+    (industry_graph != 0).sum().item()
+)
+
+print(
+    "Wiki Non-Zero:",
+    (wiki_graph != 0).sum().item()
+)
 # ------------------------
 # Model
 # ------------------------
@@ -166,7 +190,9 @@ for epoch in range(epochs):
 
         pred = model(
             x,
-            cluster_matrix
+            cluster_matrix,
+            industry_graph,
+            wiki_graph
         )
 
         loss = criterion(
@@ -248,6 +274,8 @@ for epoch in range(epochs):
         model,
         val_loader,
         cluster_matrix,
+        industry_graph,
+        wiki_graph,
         criterion,
         device
     )
@@ -297,6 +325,21 @@ for epoch in range(epochs):
 
 
 # ------------------------
+# Load Best Model
+# ------------------------
+
+model.load_state_dict(
+    torch.load(
+        "best_model.pth",
+        map_location=device
+    )
+)
+
+print(
+    "\nLoaded Best Model"
+)
+
+# ------------------------
 # Final Test Evaluation
 # ------------------------
 
@@ -310,6 +353,8 @@ test_metrics = evaluate_model(
     model,
     test_loader,
     cluster_matrix,
+    industry_graph,
+    wiki_graph,
     criterion,
     device
 )
