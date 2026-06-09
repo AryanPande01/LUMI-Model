@@ -1,0 +1,500 @@
+Step 1: Dataset Understanding
+
+We first analyzed the dataset structure.
+
+Resources available:
+
+Time-Series Data
+price_data.csv
+gt.csv
+data_ma_5.csv
+data_ma_10.csv
+data_ma_20.csv
+data_ma_30.csv
+Graph Data
+industry_adjacency.csv
+wiki_adjacency.csv
+Metadata
+tickers.csv
+dates_index.csv
+
+Dataset characteristics:
+
+Stocks (N): 542
+Samples: 1162
+Lookback Window: 60 days
+
+
+
+
+
+
+
+Step 2: Dataset Loader
+
+Built:
+
+dataset.py
+
+Purpose:
+
+Load stock price history
+Load ground-truth returns
+Create rolling windows
+
+Input:
+
+60 days of history
+
+Output:
+
+X -> [60 × 542]
+Y -> [542]
+
+Meaning:
+
+For every training sample:
+
+Past 60 trading days
+↓
+Predict next-day return
+
+
+
+
+
+
+
+
+Step 3: Dynamic Cluster Graph
+
+Built:
+
+node2vec_builder.py
+cluster_builder.py
+
+Purpose:
+
+Create adaptive stock neighborhoods.
+
+Pipeline:
+
+Stock Embeddings
+↓
+KNN Search
+↓
+Cluster Matrix
+
+Result:
+
+Cluster Matrix Shape:
+542 × 542
+
+Non-Zero Edges:
+7490
+
+Density:
+2.55%
+
+Average degree:
+
+13.8 neighbors per stock
+
+This graph restricts attention to economically similar stocks.
+
+
+
+
+
+
+
+
+
+
+
+Step 4: Dynamic Graph Learning
+
+Built:
+
+dynamic_graph.py
+
+Purpose:
+
+Construct adaptive graphs at every time step.
+
+Pipeline:
+
+Stock Features
+↓
+Query / Key Projection
+↓
+Attention Scores
+↓
+Masked by Cluster Matrix
+↓
+Dynamic Graph
+
+Output:
+
+[B, 542, 542]
+
+Validation:
+
+Attention Range:
+0.0 → 0.72
+
+Meaning:
+
+Model successfully learns different graph structures over time.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Step 5: Spatial Graph Attention
+
+Built:
+
+attention_layer.py
+
+Purpose:
+
+Capture relationships between stocks.
+
+Pipeline:
+
+Node Features
+↓
+Graph Attention
+↓
+Neighbor Aggregation
+↓
+Spatial Features
+
+Output:
+
+[B, 542, 8]
+
+Each stock now contains information from connected stocks.
+
+
+
+
+
+
+
+
+
+
+
+
+Step 6: Temporal Encoder
+
+Built:
+
+temporal_encoder.py
+
+Purpose:
+
+Apply graph learning across all historical days.
+
+Pipeline:
+
+Day 1
+↓
+Dynamic Graph + GAT
+
+Day 2
+↓
+Dynamic Graph + GAT
+
+...
+
+Day 60
+↓
+Dynamic Graph + GAT
+
+Output:
+
+[B, T, 542, 8]
+
+This creates temporal graph representations.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Step 7: Long-Short Temporal Branches
+
+Built:
+
+long_short_builder.py
+
+Purpose:
+
+Capture both recent and long-term market behavior.
+
+Created:
+
+Short Branch
+Recent observations
+Long Branch
+Sparse long-range observations
+
+Pipeline:
+
+Input History
+↓
+Short Sequence
+
+Input History
+↓
+Long Sequence
+
+
+
+
+
+
+
+
+
+
+
+
+Step 8: Temporal Attention
+
+Built:
+
+temporal_attention.py
+
+Purpose:
+
+Identify important historical periods.
+
+Pipeline:
+
+Temporal Features
+↓
+Q/K/V Attention
+↓
+Attention Weights
+↓
+Temporal Aggregation
+
+Final improvement:
+
+Instead of averaging all time steps:
+
+out = out[:, -1, :]
+
+We use the latest attended representation.
+
+This significantly improved learning.
+
+
+
+
+
+
+
+
+
+
+
+
+Step 9: Static Knowledge Graphs
+
+Built:
+
+static_graph_encoder.py
+static_graph_loader.py
+
+Used:
+
+Industry Graph
+5408 edges
+Wiki Graph
+1815 edges
+
+Purpose:
+
+Inject structural market knowledge.
+
+Pipeline:
+
+Latest Stock State
+↓
+Industry Graph Encoder
+
+Latest Stock State
+↓
+Wiki Graph Encoder
+
+Output:
+
+Industry Features
+Wiki Features
+
+
+
+
+
+
+
+
+
+
+
+Step 10: Static Graph Fusion
+
+Built:
+
+static_fusion.py
+
+Purpose:
+
+Combine:
+
+Industry Relations
++
+Wikipedia Relations
+
+Output:
+
+Static Market Representation
+
+
+
+
+
+
+
+
+
+
+
+Step 11: Dynamic + Static Fusion
+
+Built:
+
+model.py
+
+Pipeline:
+
+Dynamic Short Features
++
+Dynamic Long Features
++
+Static Graph Features
+↓
+Fusion Layer
+↓
+Prediction Head
+
+Output:
+
+542 stock predictions
+
+
+
+
+
+
+
+
+
+Step 12: Evaluation Metrics
+
+Built:
+
+metrics.py
+
+Implemented:
+
+MAE
+
+Mean Absolute Error
+
+MSE
+
+Mean Squared Error
+
+IC
+
+Information Coefficient
+
+Measures correlation between:
+
+Predicted Returns
+vs
+Actual Returns
+Rank IC
+
+Measures ranking quality.
+
+These are common financial forecasting metrics.
+
+
+
+
+
+
+
+
+
+Step 13: Training Improvements
+
+Initial training:
+
+MSE Loss only
+
+Problem:
+
+IC ≈ 0
+Rank IC ≈ 0
+
+Model minimized error but learned poor stock ranking.
+
+
+
+
+
+
+
+
+
+Step 14: Correlation-Aware Objective
+
+Implemented:
+
+loss =
+MSE
++
+0.1 × IC_Loss
+
+Purpose:
+
+Encourage predictions to follow the correct market ranking.
+
+

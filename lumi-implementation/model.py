@@ -26,8 +26,8 @@ class LUMIStage1(nn.Module):
         # ------------------
 
         self.dynamic_graph = DynamicGraphBuilder(
-            feature_dim=1,
-            hidden_dim=16
+            feature_dim=5,
+            hidden_dim=32
         )
 
         # ------------------
@@ -35,8 +35,8 @@ class LUMIStage1(nn.Module):
         # ------------------
 
         self.gat = GraphAttentionLayer(
-            in_features=1,
-            out_features=8
+            in_features=5,
+            out_features=16
         )
 
         # ------------------
@@ -158,7 +158,7 @@ class LUMIStage1(nn.Module):
         # Static Branch
         # ------------------
 
-        latest_state = x[:, -1, :, 0]
+        latest_state = x[:, -1, :, :].mean(dim=-1)
 
         industry_features = self.static_encoder(
             latest_state,

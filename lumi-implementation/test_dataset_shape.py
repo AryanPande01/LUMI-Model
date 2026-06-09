@@ -1,12 +1,11 @@
 from dataset import StockDataset
 
 dataset = StockDataset(
-    "data/LSE/data/price_data.csv",
-    "data/LSE/data/gt.csv",
+    data_dir="data/LSE/data",
     lookback=60
 )
 
 x, y = dataset[0]
 
-print(x.shape)
-print(y.shape)
+print("X Shape:", x.shape)
+print("Y Shape:", y.shape)

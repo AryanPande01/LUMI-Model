@@ -8,30 +8,26 @@ class StockDataset(Dataset):
 
     def __init__(
         self,
-        price_csv,
-        gt_csv,
+        data_dir="data/LSE/data",
         lookback=60
     ):
 
+        self.lookback = lookback
+
         # -----------------------
-        # Load price data
+        # Price
         # -----------------------
 
         price_df = pd.read_csv(
-            price_csv
+            f"{data_dir}/price_data.csv"
         )
 
-        # remove fake row
         price_df = (
             price_df.iloc[1:]
             .reset_index(drop=True)
         )
 
-        self.timestamps = (
-            price_df["Timestamp"]
-        )
-
-        self.price_data = (
+        price_values = (
             price_df.drop(
                 columns=[
                     "Unnamed: 0",
@@ -43,22 +39,115 @@ class StockDataset(Dataset):
         )
 
         # -----------------------
-        # Load GT data
+        # MA5
+        # -----------------------
+
+        ma5_df = pd.read_csv(
+            f"{data_dir}/data_ma_5.csv"
+        )
+
+        ma5_df = (
+            ma5_df.iloc[1:]
+            .reset_index(drop=True)
+        )
+
+        ma5_values = (
+            ma5_df.drop(
+                columns=[
+                    "Unnamed: 0",
+                    "Timestamp"
+                ]
+            )
+            .values
+            .astype(np.float32)
+        )
+
+        # -----------------------
+        # MA10
+        # -----------------------
+
+        ma10_df = pd.read_csv(
+            f"{data_dir}/data_ma_10.csv"
+        )
+
+        ma10_df = (
+            ma10_df.iloc[1:]
+            .reset_index(drop=True)
+        )
+
+        ma10_values = (
+            ma10_df.drop(
+                columns=[
+                    "Unnamed: 0",
+                    "Timestamp"
+                ]
+            )
+            .values
+            .astype(np.float32)
+        )
+
+        # -----------------------
+        # MA20
+        # -----------------------
+
+        ma20_df = pd.read_csv(
+            f"{data_dir}/data_ma_20.csv"
+        )
+
+        ma20_df = (
+            ma20_df.iloc[1:]
+            .reset_index(drop=True)
+        )
+
+        ma20_values = (
+            ma20_df.drop(
+                columns=[
+                    "Unnamed: 0",
+                    "Timestamp"
+                ]
+            )
+            .values
+            .astype(np.float32)
+        )
+
+        # -----------------------
+        # MA30
+        # -----------------------
+
+        ma30_df = pd.read_csv(
+            f"{data_dir}/data_ma_30.csv"
+        )
+
+        ma30_df = (
+            ma30_df.iloc[1:]
+            .reset_index(drop=True)
+        )
+
+        ma30_values = (
+            ma30_df.drop(
+                columns=[
+                    "Unnamed: 0",
+                    "Timestamp"
+                ]
+            )
+            .values
+            .astype(np.float32)
+        )
+
+        # -----------------------
+        # GT
         # -----------------------
 
         gt_df = pd.read_csv(
-            gt_csv
+            f"{data_dir}/gt.csv"
         )
 
-        # remove:
-        # row 0 -> fake row
-        # row 1 -> price row
         gt_df = (
             gt_df.iloc[2:]
             .reset_index(drop=True)
         )
 
-        self.gt_data = (
+        gt_values = (
             gt_df.drop(
                 columns=[
                     "Unnamed: 0",
@@ -69,29 +158,52 @@ class StockDataset(Dataset):
             .astype(np.float32)
         )
 
-        self.lookback = lookback
-
         # -----------------------
-        # Align lengths
+        # Align
         # -----------------------
 
         min_len = min(
-            len(self.price_data),
-            len(self.gt_data)
+            len(price_values),
+            len(ma5_values),
+            len(ma10_values),
+            len(ma20_values),
+            len(ma30_values),
+            len(gt_values)
         )
 
-        self.price_data = (
-            self.price_data[:min_len]
+        price_values = price_values[:min_len]
+        ma5_values = ma5_values[:min_len]
+        ma10_values = ma10_values[:min_len]
+        ma20_values = ma20_values[:min_len]
+        ma30_values = ma30_values[:min_len]
+        gt_values = gt_values[:min_len]
+
+        # -----------------------
+        # Stack Features
+        # -----------------------
+
+        self.features = np.stack(
+            [
+                price_values,
+                ma5_values,
+                ma10_values,
+                ma20_values,
+                ma30_values
+            ],
+            axis=-1
         )
 
-        self.gt_data = (
-            self.gt_data[:min_len]
+        self.targets = gt_values
+
+        print(
+            "Feature Tensor Shape:",
+            self.features.shape
         )
 
     def __len__(self):
 
         return (
-            len(self.price_data)
+            len(self.features)
             - self.lookback
         )
 
@@ -100,19 +212,19 @@ class StockDataset(Dataset):
         idx
     ):
 
-        x = self.price_data[
-            idx :
+        x = self.features[
+            idx:
             idx + self.lookback
         ]
 
-        y = self.gt_data[
+        y = self.targets[
             idx + self.lookback
         ]
 
         x = torch.tensor(
             x,
             dtype=torch.float32
-        ).unsqueeze(-1)
+        )
 
         y = torch.tensor(
             y,

@@ -9,16 +9,15 @@ dataset = StockDataset(
     lookback=60
 )
 
-all_y = []
+ys = []
 
 for i in range(len(dataset)):
     _, y = dataset[i]
-    all_y.append(y.numpy())
+    ys.append(y.numpy())
 
-all_y = np.concatenate(all_y)
+ys = np.concatenate(ys)
 
-print("Mean:", all_y.mean())
-print("Std :", all_y.std())
-
-print("Zeros:",
-      np.mean(all_y == 0))
+print("Target Mean:", ys.mean())
+print("Target Std :", ys.std())
+print("Target Min :", ys.min())
+print("Target Max :", ys.max())

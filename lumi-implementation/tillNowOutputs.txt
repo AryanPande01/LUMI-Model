@@ -1,0 +1,52 @@
+Final Results
+Training
+MAE:
+0.0211
+
+MSE:
+0.0017
+
+IC:
+0.0247
+
+Rank IC:
+0.0248
+Validation
+MAE:
+0.0224
+
+MSE:
+0.0015
+
+IC:
+-0.0169
+
+Rank IC:
+-0.0025
+Test
+MAE:
+0.0206
+
+MSE:
+0.0055
+
+IC:
+0.0072
+
+Rank IC:
+0.0148
+Prediction Distribution
+
+Model outputs:
+
+Mean:
+0.000067
+
+Std:
+0.0193
+
+Min:
+-0.077
+
+Max:
+0.085

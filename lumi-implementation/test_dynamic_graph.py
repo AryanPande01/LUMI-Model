@@ -18,7 +18,7 @@ N = 542
 dummy_features = torch.randn(
     B,
     N,
-    1
+    5
 )
 
 builder = DynamicGraphBuilder()

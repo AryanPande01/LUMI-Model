@@ -1,14 +1,13 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class DynamicGraphBuilder(nn.Module):
 
     def __init__(
         self,
-        feature_dim=1,
-        hidden_dim=16
+        feature_dim=5,
+        hidden_dim=32
     ):
         super().__init__()
 
@@ -30,8 +29,7 @@ class DynamicGraphBuilder(nn.Module):
         cluster_matrix
     ):
 
-        # node_features
-        # [B,N,1]
+        # [B,N,5]
 
         Q = self.query(
             node_features
@@ -50,7 +48,9 @@ class DynamicGraphBuilder(nn.Module):
             Q.shape[-1] ** 0.5
         )
 
-        mask = cluster_matrix == 0
+        mask = (
+            cluster_matrix == 0
+        )
 
         scores = scores.masked_fill(
             mask,

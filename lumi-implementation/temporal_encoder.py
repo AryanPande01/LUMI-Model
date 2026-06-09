@@ -24,7 +24,7 @@ class TemporalSequenceBuilder(nn.Module):
     ):
 
         # x
-        # [B,T,N,1]
+        # [B,T,N,5]
 
         B, T, N, C = x.shape
 

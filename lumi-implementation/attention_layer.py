@@ -7,8 +7,8 @@ class GraphAttentionLayer(nn.Module):
 
     def __init__(
         self,
-        in_features,
-        out_features
+        in_features=5,
+        out_features=16
     ):
         super().__init__()
 
@@ -30,8 +30,7 @@ class GraphAttentionLayer(nn.Module):
         adjacency
     ):
 
-        # node_features:
-        # [B,N,1]
+        # [B,N,5]
 
         h = self.W(
             node_features
@@ -39,16 +38,29 @@ class GraphAttentionLayer(nn.Module):
 
         B, N, Fdim = h.shape
 
-        h_i = h.unsqueeze(2).repeat(
-            1, 1, N, 1
+        h_i = h.unsqueeze(
+            2
+        ).repeat(
+            1,
+            1,
+            N,
+            1
         )
 
-        h_j = h.unsqueeze(1).repeat(
-            1, N, 1, 1
+        h_j = h.unsqueeze(
+            1
+        ).repeat(
+            1,
+            N,
+            1,
+            1
         )
 
         concat = torch.cat(
-            [h_i, h_j],
+            [
+                h_i,
+                h_j
+            ],
             dim=-1
         )
 
@@ -56,7 +68,9 @@ class GraphAttentionLayer(nn.Module):
             self.attn(concat)
         ).squeeze(-1)
 
-        mask = adjacency == 0
+        mask = (
+            adjacency == 0
+        )
 
         e = e.masked_fill(
             mask,
