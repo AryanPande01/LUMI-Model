@@ -38,3 +38,9 @@ print(
     At.min().item(),
     At.max().item()
 )
+
+print("Shape:", At.shape)
+print("Min:", At.min().item())
+print("Max:", At.max().item())
+print("Mean:", At.mean().item())
+print("Std:", At.std().item())

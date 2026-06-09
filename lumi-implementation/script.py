@@ -1,7 +1,8 @@
-import pandas as pd
+import torch
+import torch.nn as nn
 
-gt = pd.read_csv(
-    "data/LSE/data/gt.csv"
-)
 
-print(gt.iloc[:5, :10])
+pred = torch.randn(8, 542)
+target = torch.randn(8, 542)
+
+print(ic_loss(pred, target))

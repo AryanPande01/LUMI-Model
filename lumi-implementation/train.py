@@ -20,6 +20,26 @@ import torch.nn as nn
 from tqdm import tqdm
 
 
+def ic_loss(pred, target):
+
+    pred = pred.reshape(-1)
+    target = target.reshape(-1)
+
+    pred = pred - pred.mean()
+    target = target - target.mean()
+
+    numerator = (pred * target).sum()
+
+    denominator = (
+        torch.sqrt((pred ** 2).sum())
+        * torch.sqrt((target ** 2).sum())
+        + 1e-8
+    )
+
+    ic = numerator / denominator
+
+    return 1.0 - ic
+
 # ------------------------
 # Device
 # ------------------------
@@ -195,9 +215,19 @@ for epoch in range(epochs):
             wiki_graph
         )
 
-        loss = criterion(
+        mse_loss = criterion(
             pred,
             y
+        )
+
+        corr_loss = ic_loss(
+            pred,
+            y
+        )
+
+        loss = (
+            mse_loss
+            + 0.1 * corr_loss
         )
 
         loss.backward()
