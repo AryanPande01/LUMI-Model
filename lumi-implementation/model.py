@@ -26,7 +26,7 @@ class LUMIStage1(nn.Module):
         # ------------------
 
         self.dynamic_graph = DynamicGraphBuilder(
-            feature_dim=5,
+            feature_dim=1,
             hidden_dim=32
         )
 
@@ -35,7 +35,7 @@ class LUMIStage1(nn.Module):
         # ------------------
 
         self.gat = GraphAttentionLayer(
-            in_features=5,
+            in_features=1,
             out_features=16
         )
 

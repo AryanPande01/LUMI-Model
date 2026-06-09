@@ -4,10 +4,10 @@ from model import LUMIStage1
 model = LUMIStage1()
 
 x = torch.randn(
-    2,
-    60,
-    542,
-    5
+    2,      # batch
+    20,     # lookback
+    542,    # stocks
+    1       # features
 )
 
 cluster_matrix = torch.ones(
@@ -32,4 +32,4 @@ out = model(
     wiki_graph
 )
 
-print(out.shape)
+print("Output Shape:", out.shape)

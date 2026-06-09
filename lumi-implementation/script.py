@@ -1,8 +1,11 @@
-import torch
-import torch.nn as nn
+from dataset import StockDataset
 
+dataset = StockDataset(
+    data_dir="data/LSE/data",
+    lookback=20
+)
 
-pred = torch.randn(8, 542)
-target = torch.randn(8, 542)
+x, y = dataset[0]
 
-print(ic_loss(pred, target))
+print("X Shape:", x.shape)
+print("Y Shape:", y.shape)

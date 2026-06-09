@@ -6,7 +6,7 @@ class DynamicGraphBuilder(nn.Module):
 
     def __init__(
         self,
-        feature_dim=5,
+        feature_dim=1,
         hidden_dim=32
     ):
         super().__init__()

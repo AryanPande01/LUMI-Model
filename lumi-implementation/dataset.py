@@ -182,14 +182,8 @@ class StockDataset(Dataset):
         # Stack Features
         # -----------------------
 
-        self.features = np.stack(
-            [
-                price_values,
-                ma5_values,
-                ma10_values,
-                ma20_values,
-                ma30_values
-            ],
+        self.features = np.expand_dims(
+            price_values,
             axis=-1
         )
 
