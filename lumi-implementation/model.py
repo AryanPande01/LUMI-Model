@@ -56,7 +56,7 @@ class LUMIStage1(nn.Module):
 
         self.temporal_attention = (
             TemporalAttention(
-                feature_dim=8
+                feature_dim=16
             )
         )
 
@@ -85,7 +85,7 @@ class LUMIStage1(nn.Module):
         # ------------------
 
         self.fusion = nn.Linear(
-            num_nodes * 16 + num_nodes,
+            num_nodes * 16 * 2 + num_nodes,
             hidden_dim
         )
 

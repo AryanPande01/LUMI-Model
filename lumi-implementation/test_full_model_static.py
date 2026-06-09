@@ -1,5 +1,3 @@
-# test_full_model_static.py
-
 import torch
 from model import LUMIStage1
 
@@ -9,7 +7,7 @@ x = torch.randn(
     2,
     60,
     542,
-    1
+    5
 )
 
 cluster_matrix = torch.ones(

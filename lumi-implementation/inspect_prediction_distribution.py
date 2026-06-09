@@ -6,8 +6,7 @@ from model import LUMIStage1
 from static_graph_loader import load_static_graphs
 
 dataset = StockDataset(
-    "data/LSE/data/price_data.csv",
-    "data/LSE/data/gt.csv",
+    data_dir="data/LSE/data",
     lookback=60
 )
 

@@ -61,8 +61,7 @@ print(
 # ------------------------
 
 dataset = StockDataset(
-    "data/LSE/data/price_data.csv",
-    "data/LSE/data/gt.csv",
+    data_dir="data/LSE/data",
     lookback=60
 )
 
