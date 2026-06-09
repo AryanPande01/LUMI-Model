@@ -19,6 +19,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 from tqdm import tqdm
 
+torch.cuda.empty_cache()
 
 def ic_loss(pred, target):
 
@@ -103,19 +104,19 @@ print(
 
 train_loader = DataLoader(
     train_set,
-    batch_size=8,
+    batch_size=2,
     shuffle=True
 )
 
 val_loader = DataLoader(
     val_set,
-    batch_size=8,
+    batch_size=2,
     shuffle=False
 )
 
 test_loader = DataLoader(
     test_set,
-    batch_size=8,
+    batch_size=2,
     shuffle=False
 )
 
