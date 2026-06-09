@@ -82,19 +82,19 @@ print(
 
 train_loader = DataLoader(
     train_set,
-    batch_size=2,
-    shuffle=False
+    batch_size=8,
+    shuffle=True
 )
 
 val_loader = DataLoader(
     val_set,
-    batch_size=2,
+    batch_size=8,
     shuffle=False
 )
 
 test_loader = DataLoader(
     test_set,
-    batch_size=2,
+    batch_size=8,
     shuffle=False
 )
 
@@ -140,7 +140,7 @@ optimizer = torch.optim.Adam(
 
 best_val_loss = float("inf")
 
-epochs = 5
+epochs = 20
 
 for epoch in range(epochs):
 
