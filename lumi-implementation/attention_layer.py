@@ -111,4 +111,7 @@ class GraphAttentionLayer(nn.Module):
             out
         )
 
+        # residual connection
+        out = out + node_features
+
         return out
