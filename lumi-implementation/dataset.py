@@ -159,6 +159,13 @@ class StockDataset(Dataset):
             .astype(np.float32)
         )
 
+        gt_values = np.clip(
+            gt_values,
+            -0.2,
+            0.2
+        )
+
+
         # -----------------------
         # Align
         # -----------------------

@@ -1,28 +1,37 @@
 from dataset import StockDataset
 from data_splitter import create_splits
 
-dataset = StockDataset()
+dataset = StockDataset(
+    data_dir="data/LSE/data",
+    lookback=100
+)
 
 _, _, test_set = create_splits(dataset)
 
-vals = []
+all_targets = []
 
-for idx in test_set.indices:
+for i in range(len(test_set)):
 
-    _, y = dataset[idx]
+    _, y = test_set[i]
 
-    vals.extend(y.numpy())
+    all_targets.append(
+        y.numpy()
+    )
 
 import numpy as np
 
-vals = np.array(vals)
+all_targets = np.concatenate(
+    all_targets,
+    axis=0
+)
 
-print("TEST TARGETS")
+print("shape =", all_targets.shape)
 
-print("mean", vals.mean())
-print("std", vals.std())
-print("min", vals.min())
-print("max", vals.max())
+print("min  =", all_targets.min())
+print("max  =", all_targets.max())
+print("mean =", all_targets.mean())
+print("std  =", all_targets.std())
 
-print("99%", np.percentile(vals,99))
-print("99.9%", np.percentile(vals,99.9))
+print("95% =", np.percentile(all_targets,95))
+print("99% =", np.percentile(all_targets,99))
+print("99.9% =", np.percentile(all_targets,99.9))

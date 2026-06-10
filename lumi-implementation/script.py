@@ -1,6 +1,19 @@
 import pandas as pd
+import numpy as np
 
-gt = pd.read_csv("data/LSE/data/gt.csv")
+df = pd.read_csv(
+    "data/LSE/data/gt.csv"
+)
 
-for i in range(10):
-    print(i, gt.iloc[i, 2:10].values[:5])
+values = (
+    df.drop(
+        columns=[
+            "Unnamed: 0",
+            "Timestamp"
+        ]
+    ).values
+)
+
+loc = np.where(values == 8.8953285)
+
+print(loc)

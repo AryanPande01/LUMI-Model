@@ -1,6 +1,9 @@
 import pandas as pd
 
-price = pd.read_csv("data/LSE/data/price_data.csv")
+df = pd.read_csv(
+    "data/LSE/data/gt.csv"
+)
 
-for i in range(5):
-    print(i, price.iloc[i,2:10].values[:5])
+print(
+    df.iloc[1128:1138, [0,1,501+2]]
+)
