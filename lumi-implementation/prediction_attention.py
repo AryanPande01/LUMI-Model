@@ -78,9 +78,7 @@ class PredictionAttention(nn.Module):
                 dim=1
             )
 
-            future_embedding = (
-                alpha * V
-            )
+            future_embedding = V
 
             horizon_outputs.append(
                 future_embedding

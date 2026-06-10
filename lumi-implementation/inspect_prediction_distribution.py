@@ -1,61 +1,38 @@
+# inspect_prediction_distribution.py
+
+from dataset import StockDataset
+from model import LUMI
+
 import torch
 import numpy as np
 
-from dataset import StockDataset
-from model import LUMIStage1
-from static_graph_loader import load_static_graphs
+device = "cpu"
 
 dataset = StockDataset(
     data_dir="data/LSE/data",
-    lookback=60
+    lookback=100
 )
 
-cluster_matrix = np.load(
-    "cluster_matrix.npy"
+x, y = dataset[0]
+
+x = x.unsqueeze(0)
+
+model = LUMI(
+    num_nodes=542,
+    hidden_dim=16,
+    horizon=12
 )
-
-cluster_matrix = torch.tensor(
-    cluster_matrix,
-    dtype=torch.float32
-)
-
-industry_graph, wiki_graph = load_static_graphs(
-    "cpu"
-)
-
-model = LUMIStage1()
-
-model.load_state_dict(
-    torch.load(
-        "final_model.pth",
-        map_location="cpu"
-    )
-)
-
-model.eval()
-
-preds = []
 
 with torch.no_grad():
 
-    for i in range(50):
+    pred = model(
+        x,
+        torch.tensor(np.load("cluster_matrix.npy")).float(),
+        torch.eye(542),
+        torch.eye(542)
+    )
 
-        x, _ = dataset[i]
-
-        p = model(
-            x.unsqueeze(0),
-            cluster_matrix,
-            industry_graph,
-            wiki_graph
-        )
-
-        preds.append(
-            p.flatten().numpy()
-        )
-
-preds = np.concatenate(preds)
-
-print("Mean:", preds.mean())
-print("Std :", preds.std())
-print("Min :", preds.min())
-print("Max :", preds.max())
+print("pred min =", pred.min().item())
+print("pred max =", pred.max().item())
+print("pred mean =", pred.mean().item())
+print("pred std =", pred.std().item())
