@@ -197,7 +197,7 @@ optimizer = torch.optim.Adam(
 
 # ------------------------
 # Training
-# -----------------------
+# ----------------------
 
 best_val_loss = float("inf")
 
