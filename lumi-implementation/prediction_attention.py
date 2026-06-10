@@ -36,27 +36,22 @@ class PredictionAttention(nn.Module):
     ):
 
         # H
-        # [B,N,D]
+        # [B,T,N,D]
 
-        B, N, D = H.shape
+        B, T, N, D = H.shape
 
-        K = self.key(
-            H
-        )
+        K = self.key(H)
 
-        V = self.value(
-            H
-        )
+        V = self.value(H)
 
-        horizon_outputs = []
+        outputs = []
 
-        for q in range(
-            self.horizon
-        ):
+        for q in range(self.horizon):
 
             q_vec = self.query[q]
 
             q_vec = q_vec.view(
+                1,
                 1,
                 1,
                 D
@@ -65,27 +60,36 @@ class PredictionAttention(nn.Module):
             scores = (
                 K * q_vec
             ).sum(
-                dim=-1,
-                keepdim=True
+                dim=-1
             )
 
             scores = scores / (
                 D ** 0.5
             )
 
+            # attention over TIME
+
             alpha = torch.softmax(
                 scores,
                 dim=1
             )
 
-            future_embedding = alpha * V
+            alpha = alpha.unsqueeze(
+                -1
+            )
 
-            horizon_outputs.append(
+            future_embedding = (
+                alpha * V
+            ).sum(
+                dim=1
+            )
+
+            outputs.append(
                 future_embedding
             )
 
         out = torch.stack(
-            horizon_outputs,
+            outputs,
             dim=1
         )
 

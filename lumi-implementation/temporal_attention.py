@@ -1,32 +1,58 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class TemporalAttention(nn.Module):
 
     def __init__(
         self,
-        feature_dim=8
+        feature_dim=16,
+        num_heads=8
     ):
         super().__init__()
 
-        self.query = nn.Linear(
+        self.num_heads = num_heads
+
+        self.head_dim = (
+            feature_dim // num_heads
+        )
+
+        self.query = nn.ModuleList([
+            nn.Linear(
+                feature_dim,
+                self.head_dim,
+                bias=False
+            )
+            for _ in range(num_heads)
+        ])
+
+        self.key = nn.ModuleList([
+            nn.Linear(
+                feature_dim,
+                self.head_dim,
+                bias=False
+            )
+            for _ in range(num_heads)
+        ])
+
+        self.value = nn.ModuleList([
+            nn.Linear(
+                feature_dim,
+                self.head_dim,
+                bias=False
+            )
+            for _ in range(num_heads)
+        ])
+
+        self.output_projection = nn.Linear(
             feature_dim,
             feature_dim
         )
 
-        self.key = nn.Linear(
-            feature_dim,
-            feature_dim
-        )
-
-        self.value = nn.Linear(
-            feature_dim,
-            feature_dim
-        )
-
-    def forward(self, H):
+    def forward(
+        self,
+        H
+    ):
 
         # H
         # [B,T,N,D]
@@ -40,47 +66,80 @@ class TemporalAttention(nn.Module):
             3
         )
 
+        # [B,N,T,D]
+
         H = H.reshape(
             B * N,
             T,
             D
         )
 
-        Q = self.query(H)
+        # [B*N,T,D]
 
-        K = self.key(H)
+        head_outputs = []
 
-        V = self.value(H)
+        for h in range(
+            self.num_heads
+        ):
 
-        scores = torch.matmul(
-            Q,
-            K.transpose(-1, -2)
-        )
+            Q = self.query[h](
+                H
+            )
 
-        scores = scores / (
-            D ** 0.5
-        )
+            K = self.key[h](
+                H
+            )
 
-        alpha = torch.softmax(
-            scores,
+            V = self.value[h](
+                H
+            )
+
+            scores = torch.matmul(
+                Q,
+                K.transpose(-1, -2)
+            )
+
+            scores = scores / (
+                self.head_dim ** 0.5
+            )
+
+            alpha = torch.softmax(
+                scores,
+                dim=-1
+            )
+
+            out = torch.matmul(
+                alpha,
+                V
+            )
+
+            head_outputs.append(
+                out
+            )
+
+        out = torch.cat(
+            head_outputs,
             dim=-1
         )
 
-        out = torch.matmul(
-            alpha,
-            V
+        out = self.output_projection(
+            out
         )
-
-        # ----------------------
-        # IMPORTANT CHANGE
-        # ----------------------
-
-        out = out.mean(dim=1)
 
         out = out.reshape(
             B,
             N,
+            T,
             D
         )
+
+        out = out.permute(
+            0,
+            2,
+            1,
+            3
+        )
+
+        # [B,T,N,D]
 
         return out
