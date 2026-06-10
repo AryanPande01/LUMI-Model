@@ -1,7 +1,9 @@
 from dataset import StockDataset
 from model import LUMI
-import torch
+from static_graph_loader import load_static_graphs
+
 import numpy as np
+import torch
 
 device = "cpu"
 
@@ -12,13 +14,13 @@ dataset = StockDataset(
 
 x, y = dataset[0]
 
-x = x.unsqueeze(0).to(device)
+x = x.unsqueeze(0)
 
 model = LUMI(
     num_nodes=542,
     hidden_dim=16,
     horizon=12
-).to(device)
+)
 
 model.load_state_dict(
     torch.load(
@@ -32,9 +34,7 @@ model.eval()
 cluster_matrix = torch.tensor(
     np.load("cluster_matrix.npy"),
     dtype=torch.float32
-).to(device)
-
-from static_graph_loader import load_static_graphs
+)
 
 industry_graph, wiki_graph = load_static_graphs(device)
 
@@ -47,5 +47,7 @@ with torch.no_grad():
         wiki_graph
     )
 
-print(pred.mean().item())
-print(pred.std().item())
+print("pred mean =", pred.mean().item())
+print("pred std =", pred.std().item())
+print("target mean =", y.mean().item())
+print("target std =", y.std().item())
