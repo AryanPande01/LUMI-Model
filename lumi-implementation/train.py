@@ -78,7 +78,7 @@ print(
 
 dataset = StockDataset(
     data_dir="data/LSE/data",
-    lookback=60
+    lookback=20
 )
 
 print(
@@ -187,7 +187,7 @@ model = LUMI(
     horizon=12
 ).to(device)
 
-criterion = nn.MSELoss()
+criterion = nn.L1Loss()
 
 optimizer = torch.optim.Adam(
     model.parameters(),
@@ -201,7 +201,7 @@ optimizer = torch.optim.Adam(
 
 best_val_loss = float("inf")
 
-epochs = 20
+epochs = 10
 
 for epoch in range(epochs):
 
@@ -240,14 +240,9 @@ for epoch in range(epochs):
             y
         )
 
-        corr_loss = ic_loss(
-            pred,
-            y
-        )
 
         loss = (
             mse_loss
-            + 0.1 * corr_loss
         )
 
         loss.backward()
