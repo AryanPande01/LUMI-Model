@@ -201,7 +201,7 @@ optimizer = torch.optim.Adam(
 
 best_val_loss = float("inf")
 
-epochs = 15
+epochs = 3
 
 for epoch in range(epochs):
 
