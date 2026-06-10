@@ -1,4 +1,5 @@
 from dataset import StockDataset
+import numpy as np
 
 d = StockDataset()
 

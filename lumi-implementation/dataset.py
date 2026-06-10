@@ -201,6 +201,22 @@ class StockDataset(Dataset):
             axis=-1
         )
 
+        feature_mean = self.features.mean(
+            axis=(0, 1),
+            keepdims=True
+        )
+
+        feature_std = self.features.std(
+            axis=(0, 1),
+            keepdims=True
+        )
+
+        self.features = (
+            self.features - feature_mean
+        ) / (
+            feature_std + 1e-8
+        )
+
         self.targets = gt_values
 
         print(
