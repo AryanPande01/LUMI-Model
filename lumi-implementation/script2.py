@@ -1,13 +1,6 @@
-import numpy as np
-from dataset import Dataset
-y = dataset.targets
+import pandas as pd
 
-print(y.shape)
+price = pd.read_csv("data/LSE/data/price_data.csv")
 
-print(
-    np.isnan(y).sum()
-)
-
-print(
-    np.isinf(y).sum()
-)
+for i in range(5):
+    print(i, price.iloc[i,2:10].values[:5])

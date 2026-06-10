@@ -78,7 +78,7 @@ print(
 
 dataset = StockDataset(
     data_dir="data/LSE/data",
-    lookback=20
+    lookback=100
 )
 
 print(
@@ -201,7 +201,7 @@ optimizer = torch.optim.Adam(
 
 best_val_loss = float("inf")
 
-epochs = 10
+epochs = 3
 
 for epoch in range(epochs):
 
