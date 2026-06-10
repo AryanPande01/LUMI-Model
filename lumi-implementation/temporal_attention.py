@@ -75,7 +75,7 @@ class TemporalAttention(nn.Module):
         # IMPORTANT CHANGE
         # ----------------------
 
-        out = out.mean(dim=1)
+        out = out[:, -1, :]
 
         out = out.reshape(
             B,

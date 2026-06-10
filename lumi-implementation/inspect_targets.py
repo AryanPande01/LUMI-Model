@@ -5,18 +5,17 @@ import numpy as np
 
 dataset = StockDataset(
     data_dir="data/LSE/data",
-    lookback=60
+    lookback=100
 )
 
-ys = []
+all_y = []
 
 for i in range(len(dataset)):
     _, y = dataset[i]
-    ys.append(y.numpy())
+    all_y.append(y.numpy())
 
-ys = np.concatenate(ys)
+all_y = np.concatenate(all_y)
 
-print("Target Mean:", ys.mean())
-print("Target Std :", ys.std())
-print("Target Min :", ys.min())
-print("Target Max :", ys.max())
+print("target mean =", all_y.mean())
+print("positive % =", (all_y > 0).mean())
+print("negative % =", (all_y < 0).mean())
