@@ -235,21 +235,10 @@ for epoch in range(epochs):
             wiki_graph
         )
 
-        mse_loss = criterion(
+        loss = criterion(
             pred,
             y
-        )
-
-        corr_loss = ic_loss(
-            pred,
-            y
-        )
-
-        loss = (
-            0.2 * mse_loss
-            +
-            corr_loss
-        )
+        )       
 
         loss.backward()
 
