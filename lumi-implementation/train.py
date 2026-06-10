@@ -178,7 +178,7 @@ print(
 # Model
 # ------------------------
 
-model = LUMIStage1(
+model = LUMI(
     num_nodes=542,
     hidden_dim=16,
     horizon=12
