@@ -9,6 +9,9 @@ from static_graph_loader import load_static_graphs
 from metrics import (
     mae,
     mse,
+    rmse,
+    mape,
+    directional_accuracy,
     information_coefficient,
     rank_ic
 )
@@ -207,6 +210,9 @@ for epoch in range(epochs):
     epoch_loss = 0
     epoch_mae = 0
     epoch_mse = 0
+    epoch_rmse = 0
+    epoch_mape = 0
+    epoch_da = 0
     epoch_ic = 0
     epoch_rank_ic = 0
 
@@ -260,6 +266,21 @@ for epoch in range(epochs):
             y.detach()
         )
 
+        epoch_rmse += rmse(
+            pred.detach(),
+            y.detach()
+        )
+
+        epoch_mape += mape(
+            pred.detach(),
+            y.detach()
+        )
+
+        epoch_da += directional_accuracy(
+            pred.detach(),
+            y.detach()
+        )
+
         epoch_ic += (
             information_coefficient(
                 pred.detach(),
@@ -303,6 +324,18 @@ for epoch in range(epochs):
     )
 
     print(
+        f"RMSE     : {epoch_rmse/batches:.6f}"
+    )
+
+    print(
+        f"MAPE     : {epoch_mape/batches:.6f}"
+    )
+
+    print(
+        f"DA (%)   : {epoch_da/batches:.2f}"
+    )
+
+    print(
         f"IC       : {epoch_ic/batches:.6f}"
     )
 
@@ -340,6 +373,18 @@ for epoch in range(epochs):
 
     print(
         f"MSE      : {val_metrics['mse']:.6f}"
+    )
+
+    print(
+        f"RMSE     : {val_metrics['rmse']:.6f}"
+    )
+
+    print(
+        f"MAPE     : {val_metrics['mape']:.6f}"
+    )
+
+    print(
+        f"DA (%)   : {val_metrics['da']:.2f}"
     )
 
     print(
@@ -415,6 +460,17 @@ print(
     f"MSE      : {test_metrics['mse']:.6f}"
 )
 
+print(
+    f"RMSE     : {test_metrics['rmse']:.6f}"
+)
+
+print(
+    f"MAPE     : {test_metrics['mape']:.6f}"
+)
+
+print(
+    f"DA (%)   : {test_metrics['da']:.2f}"
+)
 print(
     f"IC       : {test_metrics['ic']:.6f}"
 )

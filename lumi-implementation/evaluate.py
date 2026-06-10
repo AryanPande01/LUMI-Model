@@ -3,6 +3,9 @@ import torch
 from metrics import (
     mae,
     mse,
+    rmse,
+    mape,
+    directional_accuracy,
     information_coefficient,
     rank_ic
 )
@@ -21,8 +24,13 @@ def evaluate_model(
     model.eval()
 
     total_loss = 0
+
     total_mae = 0
     total_mse = 0
+    total_rmse = 0
+    total_mape = 0
+    total_da = 0
+
     total_ic = 0
     total_rank_ic = 0
 
@@ -61,6 +69,21 @@ def evaluate_model(
                 y
             )
 
+            total_rmse += rmse(
+                pred,
+                y
+            )
+
+            total_mape += mape(
+                pred,
+                y
+            )
+
+            total_da += directional_accuracy(
+                pred,
+                y
+            )
+
             total_ic += (
                 information_coefficient(
                     pred,
@@ -87,6 +110,15 @@ def evaluate_model(
 
         "mse":
             total_mse / batches,
+
+        "rmse":
+            total_rmse / batches,
+
+        "mape":
+            total_mape / batches,
+
+        "da":
+            total_da / batches,
 
         "ic":
             total_ic / batches,

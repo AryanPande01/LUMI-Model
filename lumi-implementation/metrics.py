@@ -19,6 +19,61 @@ def mse(pred, target):
     ).item()
 
 
+def rmse(pred, target):
+
+    return torch.sqrt(
+        torch.mean(
+            (
+                pred - target
+            ) ** 2
+        )
+    ).item()
+
+
+def mape(pred, target):
+
+    eps = 1e-8
+
+    return (
+        torch.mean(
+            torch.abs(
+                (
+                    pred - target
+                )
+                /
+                (
+                    torch.abs(
+                        target
+                    )
+                    + eps
+                )
+            )
+        )
+        * 100
+    ).item()
+
+
+def directional_accuracy(
+    pred,
+    target
+):
+
+    pred_sign = pred > 0
+
+    target_sign = target > 0
+
+    correct = (
+        pred_sign
+        ==
+        target_sign
+    ).float()
+
+    return (
+        correct.mean()
+        * 100
+    ).item()
+
+
 def information_coefficient(
     pred,
     target
@@ -28,18 +83,33 @@ def information_coefficient(
 
         ics = []
 
-        for q in range(pred.shape[1]):
+        for q in range(
+            pred.shape[1]
+        ):
 
-            p = pred[:, q, :].reshape(-1)
-            t = target[:, q, :].reshape(-1)
+            p = pred[
+                :,
+                q,
+                :
+            ].reshape(-1)
+
+            t = target[
+                :,
+                q,
+                :
+            ].reshape(-1)
 
             p = p - p.mean()
             t = t - t.mean()
 
             denom = (
-                torch.sqrt((p ** 2).sum())
+                torch.sqrt(
+                    (p ** 2).sum()
+                )
                 *
-                torch.sqrt((t ** 2).sum())
+                torch.sqrt(
+                    (t ** 2).sum()
+                )
             )
 
             if denom > 0:
@@ -52,7 +122,11 @@ def information_coefficient(
                     ).item()
                 )
 
-        return sum(ics) / len(ics)
+        return (
+            sum(ics)
+            /
+            len(ics)
+        )
 
     p = pred.reshape(-1)
     t = target.reshape(-1)
@@ -61,16 +135,23 @@ def information_coefficient(
     t = t - t.mean()
 
     denom = (
-        torch.sqrt((p ** 2).sum())
+        torch.sqrt(
+            (p ** 2).sum()
+        )
         *
-        torch.sqrt((t ** 2).sum())
+        torch.sqrt(
+            (t ** 2).sum()
+        )
     )
 
     if denom == 0:
+
         return 0.0
 
     return (
-        (p * t).sum()
+        (
+            p * t
+        ).sum()
         /
         denom
     ).item()
@@ -85,10 +166,21 @@ def rank_ic(
 
         scores = []
 
-        for q in range(pred.shape[1]):
+        for q in range(
+            pred.shape[1]
+        ):
 
-            p = pred[:, q, :]
-            t = target[:, q, :]
+            p = pred[
+                :,
+                q,
+                :
+            ]
+
+            t = target[
+                :,
+                q,
+                :
+            ]
 
             p_rank = torch.argsort(
                 torch.argsort(
@@ -109,7 +201,11 @@ def rank_ic(
                 )
             )
 
-        return sum(scores) / len(scores)
+        return (
+            sum(scores)
+            /
+            len(scores)
+        )
 
     p_rank = torch.argsort(
         torch.argsort(
