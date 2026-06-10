@@ -1,5 +1,5 @@
 from dataset import StockDataset
-from model import LUMIStage1
+from model import LUMI
 
 from data_splitter import create_splits
 from evaluate import evaluate_model
@@ -23,23 +23,35 @@ torch.cuda.empty_cache()
 
 def ic_loss(pred, target):
 
-    pred = pred.reshape(-1)
-    target = target.reshape(-1)
+    horizon_losses = []
 
-    pred = pred - pred.mean()
-    target = target - target.mean()
+    for q in range(pred.shape[1]):
 
-    numerator = (pred * target).sum()
+        p = pred[:, q, :].reshape(-1)
+        t = target[:, q, :].reshape(-1)
 
-    denominator = (
-        torch.sqrt((pred ** 2).sum())
-        * torch.sqrt((target ** 2).sum())
-        + 1e-8
-    )
+        p = p - p.mean()
+        t = t - t.mean()
 
-    ic = numerator / denominator
+        numerator = (p * t).sum()
 
-    return 1.0 - ic
+        denominator = (
+            torch.sqrt((p ** 2).sum())
+            *
+            torch.sqrt((t ** 2).sum())
+            +
+            1e-8
+        )
+
+        ic = numerator / denominator
+
+        horizon_losses.append(
+            1.0 - ic
+        )
+
+    return torch.stack(
+        horizon_losses
+    ).mean()
 
 # ------------------------
 # Device
@@ -167,7 +179,9 @@ print(
 # ------------------------
 
 model = LUMIStage1(
-    num_nodes=542
+    num_nodes=542,
+    hidden_dim=16,
+    horizon=12
 ).to(device)
 
 criterion = nn.MSELoss()

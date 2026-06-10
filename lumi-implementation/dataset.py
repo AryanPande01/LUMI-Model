@@ -13,6 +13,7 @@ class StockDataset(Dataset):
     ):
 
         self.lookback = lookback
+        self.horizon = 12
 
         # -----------------------
         # Price
@@ -179,7 +180,7 @@ class StockDataset(Dataset):
         gt_values = gt_values[:min_len]
 
         # -----------------------
-        # Stack Features
+        # Feature Tensor
         # -----------------------
 
         self.features = np.stack(
@@ -205,6 +206,8 @@ class StockDataset(Dataset):
         return (
             len(self.features)
             - self.lookback
+            - self.horizon
+            + 1
         )
 
     def __getitem__(
@@ -212,13 +215,22 @@ class StockDataset(Dataset):
         idx
     ):
 
+        # -----------------------
+        # Input Sequence
+        # -----------------------
+
         x = self.features[
             idx:
             idx + self.lookback
         ]
 
+        # -----------------------
+        # Future 12-Day Targets
+        # -----------------------
+
         y = self.targets[
-            idx + self.lookback
+            idx + self.lookback:
+            idx + self.lookback + self.horizon
         ]
 
         x = torch.tensor(

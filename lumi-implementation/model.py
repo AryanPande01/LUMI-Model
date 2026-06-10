@@ -1,108 +1,136 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from attention_layer import GraphAttentionLayer
-from dynamic_graph import DynamicGraphBuilder
 from temporal_encoder import TemporalSequenceBuilder
 from temporal_attention import TemporalAttention
-from long_short_builder import LongShortBuilder
-
-from static_graph_encoder import StaticGraphEncoder
-from static_fusion import StaticFusion
 from prediction_attention import PredictionAttention
 
+from semantic_graph import SemanticGraphBuilder
+from dynamic_graph import DynamicGraphBuilder
 
-class LUMIStage1(nn.Module):
+from long_short_builder import LongShortBuilder
+
+from input_projection import InputProjection
+from decoder import Decoder
+from horizon_fusion import HorizonFusion
+
+
+class LUMI(nn.Module):
 
     def __init__(
         self,
         num_nodes=542,
-        hidden_dim=128
+        hidden_dim=16,
+        horizon=12
     ):
         super().__init__()
 
-        # ------------------
-        # Dynamic Graph
-        # ------------------
+        self.horizon = horizon
 
-        self.dynamic_graph = DynamicGraphBuilder(
-            feature_dim=5,
-            hidden_dim=32
+        # ----------------------------------
+        # Input Projection
+        # ----------------------------------
+
+        self.input_projection = (
+            InputProjection(
+                input_dim=5,
+                hidden_dim=hidden_dim
+            )
         )
 
-        # ------------------
+        # ----------------------------------
+        # Semantic Graph
+        # ----------------------------------
+
+        self.semantic_graph = (
+            SemanticGraphBuilder()
+        )
+
+        # ----------------------------------
+        # Dynamic Graph
+        # ----------------------------------
+
+        self.dynamic_graph = (
+            DynamicGraphBuilder(
+                feature_dim=hidden_dim,
+                hidden_dim=32
+            )
+        )
+
+        # ----------------------------------
         # Spatial Attention
-        # ------------------
+        # ----------------------------------
 
         self.gat = GraphAttentionLayer(
-            in_features=5,
-            out_features=16
+            in_features=hidden_dim,
+            out_features=hidden_dim
         )
 
-        # ------------------
+        # ----------------------------------
         # Temporal Encoder
-        # ------------------
+        # ----------------------------------
 
         self.temporal_encoder = (
             TemporalSequenceBuilder(
-                self.gat,
-                self.dynamic_graph
+                self.gat
             )
         )
 
-        # ------------------
-        # Temporal Attention
-        # ------------------
-
-        self.temporal_attention = (
-            TemporalAttention(
-                feature_dim=16
-            )
-        )
-
-        # ------------------
-        # Prediction Attention
-        # ------------------
-
-        self.prediction_attention = (
-            PredictionAttention(
-                feature_dim=16
-            )
-        )
-
-        # ------------------
-        # Short / Long Builder
-        # ------------------
+        # ----------------------------------
+        # Long / Short Builder
+        # ----------------------------------
 
         self.long_short_builder = (
             LongShortBuilder()
         )
 
-        # ------------------
-        # Static Branch
-        # ------------------
+        # ----------------------------------
+        # Temporal Attention
+        # ----------------------------------
 
-        self.static_encoder = StaticGraphEncoder(
-            num_nodes=num_nodes
+        self.temporal_attention = (
+            TemporalAttention(
+                feature_dim=hidden_dim
+            )
         )
 
-        self.static_fusion = StaticFusion(
-            num_nodes=num_nodes
+        # ----------------------------------
+        # Prediction Attention
+        # ----------------------------------
+
+        self.prediction_attention = (
+            PredictionAttention(
+                feature_dim=hidden_dim,
+                horizon=horizon
+            )
         )
 
-        # ------------------
-        # Dynamic + Static Fusion
-        # ------------------
+        # ----------------------------------
+        # Decoder
+        # ----------------------------------
 
-        self.fusion = nn.Linear(
-            num_nodes * 16 * 2 + num_nodes,
-            hidden_dim
+        self.decoder = Decoder(
+            feature_dim=hidden_dim
         )
 
-        self.output_layer = nn.Linear(
+        # ----------------------------------
+        # Stream Heads
+        # ----------------------------------
+
+        self.head = nn.Linear(
             hidden_dim,
-            num_nodes
+            1
+        )
+
+        # ----------------------------------
+        # Horizon Fusion
+        # ----------------------------------
+
+        self.horizon_fusion = (
+            HorizonFusion(
+                horizon=horizon
+            )
         )
 
     def forward(
@@ -113,9 +141,43 @@ class LUMIStage1(nn.Module):
         wiki_graph
     ):
 
-        # ------------------
-        # Build Short & Long
-        # ------------------
+        # ==================================
+        # Input Projection
+        # ==================================
+
+        x = self.input_projection(
+            x
+        )
+
+        # [B,T,N,D]
+
+        # ==================================
+        # Semantic Graph
+        # ==================================
+
+        semantic_graph = (
+            self.semantic_graph(
+                industry_graph,
+                wiki_graph
+            )
+        )
+
+        # ==================================
+        # Dynamic Graph
+        # ==================================
+
+        latest_features = x[:, -1]
+
+        dynamic_graph = (
+            self.dynamic_graph(
+                latest_features,
+                cluster_matrix
+            )
+        )
+
+        # ==================================
+        # Long / Short
+        # ==================================
 
         short_seq, long_seq = (
             self.long_short_builder(
@@ -123,96 +185,125 @@ class LUMIStage1(nn.Module):
             )
         )
 
-        # ------------------
-        # Short Branch
-        # ------------------
+        # ==================================
+        # STREAM 1
+        # Semantic + Short
+        # ==================================
 
-        H_short = self.temporal_encoder(
+        S1 = self.temporal_encoder(
             short_seq,
-            cluster_matrix
+            semantic_graph
         )
 
-        H_short = self.temporal_attention(
-            H_short
+        S1 = self.temporal_attention(
+            S1
         )
 
-        H_short = self.prediction_attention(
-            H_short
+        S1 = self.prediction_attention(
+            S1
         )
 
-        # ------------------
-        # Long Branch
-        # ------------------
+        S1 = self.decoder(
+            S1,
+            semantic_graph
+        )
 
-        H_long = self.temporal_encoder(
+        Y1 = self.head(
+            S1
+        ).squeeze(-1)
+
+        # ==================================
+        # STREAM 2
+        # Semantic + Long
+        # ==================================
+
+        S2 = self.temporal_encoder(
             long_seq,
-            cluster_matrix
+            semantic_graph
         )
 
-        H_long = self.temporal_attention(
-            H_long
+        S2 = self.temporal_attention(
+            S2
         )
 
-        H_long = self.prediction_attention(
-            H_long
+        S2 = self.prediction_attention(
+            S2
         )
 
-        # ------------------
-        # Flatten Dynamic Features
-        # ------------------
-
-        batch_size = H_short.shape[0]
-
-        H_short = H_short.reshape(
-            batch_size,
-            -1
+        S2 = self.decoder(
+            S2,
+            semantic_graph
         )
 
-        H_long = H_long.reshape(
-            batch_size,
-            -1
+        Y2 = self.head(
+            S2
+        ).squeeze(-1)
+
+        # ==================================
+        # STREAM 3
+        # Dynamic + Short
+        # ==================================
+
+        S3 = self.temporal_encoder(
+            short_seq,
+            dynamic_graph
         )
 
-        # ------------------
-        # Static Branch
-        # ------------------
-
-        latest_state = x[:, -1, :, :].mean(dim=-1)
-
-        industry_features = self.static_encoder(
-            latest_state,
-            industry_graph
+        S3 = self.temporal_attention(
+            S3
         )
 
-        wiki_features = self.static_encoder(
-            latest_state,
-            wiki_graph
+        S3 = self.prediction_attention(
+            S3
         )
 
-        static_features = self.static_fusion(
-            industry_features,
-            wiki_features
+        S3 = self.decoder(
+            S3,
+            dynamic_graph
         )
 
-        # ------------------
-        # Fusion
-        # ------------------
+        Y3 = self.head(
+            S3
+        ).squeeze(-1)
 
-        H = torch.cat(
-            [
-                H_short,
-                H_long,
-                static_features
-            ],
-            dim=1
+        # ==================================
+        # STREAM 4
+        # Dynamic + Long
+        # ==================================
+
+        S4 = self.temporal_encoder(
+            long_seq,
+            dynamic_graph
         )
 
-        H = F.relu(
-            self.fusion(H)
+        S4 = self.temporal_attention(
+            S4
         )
 
-        H = self.output_layer(
-            H
+        S4 = self.prediction_attention(
+            S4
         )
 
-        return H
+        S4 = self.decoder(
+            S4,
+            dynamic_graph
+        )
+
+        Y4 = self.head(
+            S4
+        ).squeeze(-1)
+
+        # ==================================
+        # Horizon-wise Fusion
+        # ==================================
+
+        out = self.horizon_fusion(
+            Y1,
+            Y2,
+            Y3,
+            Y4
+        )
+
+        # [B,Q,N]
+
+        return out

@@ -6,47 +6,32 @@ class TemporalSequenceBuilder(nn.Module):
 
     def __init__(
         self,
-        graph_layer,
-        dynamic_graph_builder
+        graph_layer
     ):
         super().__init__()
 
         self.graph_layer = graph_layer
 
-        self.dynamic_graph_builder = (
-            dynamic_graph_builder
-        )
-
     def forward(
         self,
         x,
-        cluster_matrix
+        adjacency
     ):
 
         # x
-        # [B,T,N,5]
-
-        B, T, N, C = x.shape
+        # [B,T,N,F]
 
         outputs = []
+
+        T = x.shape[1]
 
         for t in range(T):
 
             xt = x[:, t, :, :]
 
-            At = self.dynamic_graph_builder(
-                xt,
-                cluster_matrix
-            )
-
-            # ------------------
-            # FIX:
-            # Use full batch graph
-            # ------------------
-
             Ht = self.graph_layer(
                 xt,
-                At
+                adjacency
             )
 
             outputs.append(
@@ -57,5 +42,7 @@ class TemporalSequenceBuilder(nn.Module):
             outputs,
             dim=1
         )
+
+        # [B,T,N,D]
 
         return H

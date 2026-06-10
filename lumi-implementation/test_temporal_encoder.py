@@ -1,48 +1,34 @@
-import numpy as np
 import torch
 
 from attention_layer import GraphAttentionLayer
-from dynamic_graph import DynamicGraphBuilder
 from temporal_encoder import TemporalSequenceBuilder
 
 
-cluster_matrix = np.load(
-    "cluster_matrix.npy"
-)
-
-cluster_matrix = torch.tensor(
-    cluster_matrix,
-    dtype=torch.float32
-)
-
 graph_layer = GraphAttentionLayer(
-    in_features=1,
-    out_features=8
-)
-
-dynamic_graph = DynamicGraphBuilder(
-    feature_dim=1,
-    hidden_dim=16
+    in_features=16,
+    out_features=16
 )
 
 encoder = TemporalSequenceBuilder(
-    graph_layer,
-    dynamic_graph
+    graph_layer
 )
 
-dummy_x = torch.randn(
-    2,      # batch
-    20,     # time
-    542,    # stocks
-    1       # feature
+x = torch.randn(
+    2,
+    20,
+    542,
+    16
 )
 
-H = encoder(
-    dummy_x,
-    cluster_matrix
+adjacency = torch.randint(
+    0,
+    2,
+    (542, 542)
+).float()
+
+out = encoder(
+    x,
+    adjacency
 )
 
-print(
-    "Output Shape:",
-    H.shape
-)
+print(out.shape)

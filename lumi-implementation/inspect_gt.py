@@ -4,36 +4,10 @@ gt = pd.read_csv(
     "data/LSE/data/gt.csv"
 )
 
-gt = gt.iloc[1:]
+print(gt.head(15))
 
-gt = gt.drop(
-    columns=[
-        "Unnamed: 0",
-        "Timestamp"
-    ]
-)
-
-print(
-    "Shape:",
-    gt.shape
-)
-
-print(
-    "\nMean:",
-    gt.values.mean()
-)
-
-print(
-    "\nStd:",
-    gt.values.std()
-)
-
-print(
-    "\nMin:",
-    gt.values.min()
-)
-
-print(
-    "\nMax:",
-    gt.values.max()
-)
+print()
+print("Rows :", len(gt))
+print("Cols :", len(gt.columns))
+print()
+print(gt.columns[:10])

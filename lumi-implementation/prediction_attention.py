@@ -6,13 +6,18 @@ class PredictionAttention(nn.Module):
 
     def __init__(
         self,
-        feature_dim=16
+        feature_dim=16,
+        horizon=12
     ):
         super().__init__()
 
-        self.query = nn.Linear(
-            feature_dim,
-            feature_dim
+        self.horizon = horizon
+
+        self.query = nn.Parameter(
+            torch.randn(
+                horizon,
+                feature_dim
+            )
         )
 
         self.key = nn.Linear(
@@ -25,34 +30,67 @@ class PredictionAttention(nn.Module):
             feature_dim
         )
 
-    def forward(self, H):
+    def forward(
+        self,
+        H
+    ):
 
         # H
         # [B,N,D]
 
-        Q = self.query(H)
+        B, N, D = H.shape
 
-        K = self.key(H)
-
-        V = self.value(H)
-
-        scores = torch.matmul(
-            Q,
-            K.transpose(-1, -2)
+        K = self.key(
+            H
         )
 
-        scores = scores / (
-            H.shape[-1] ** 0.5
+        V = self.value(
+            H
         )
 
-        alpha = torch.softmax(
-            scores,
-            dim=-1
+        horizon_outputs = []
+
+        for q in range(
+            self.horizon
+        ):
+
+            q_vec = self.query[q]
+
+            q_vec = q_vec.view(
+                1,
+                1,
+                D
+            )
+
+            scores = (
+                K * q_vec
+            ).sum(
+                dim=-1,
+                keepdim=True
+            )
+
+            scores = scores / (
+                D ** 0.5
+            )
+
+            alpha = torch.softmax(
+                scores,
+                dim=1
+            )
+
+            future_embedding = (
+                alpha * V
+            )
+
+            horizon_outputs.append(
+                future_embedding
+            )
+
+        out = torch.stack(
+            horizon_outputs,
+            dim=1
         )
 
-        out = torch.matmul(
-            alpha,
-            V
-        )
+        # [B,Q,N,D]
 
         return out
