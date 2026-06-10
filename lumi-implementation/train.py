@@ -240,9 +240,15 @@ for epoch in range(epochs):
             y
         )
 
+        corr_loss = ic_loss(
+            pred,
+            y
+        )
 
         loss = (
             mse_loss
+            +
+            corr_loss
         )
 
         loss.backward()
