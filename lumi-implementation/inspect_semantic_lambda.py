@@ -1,9 +1,10 @@
-# inspect_semantic_lambda.py
-
 from model import LUMI
+import torch
 
 model = LUMI()
 
 print(
-    model.semantic_graph.alpha
+    torch.sigmoid(
+        model.semantic_graph.alpha
+    ).item()
 )

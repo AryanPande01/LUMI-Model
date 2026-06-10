@@ -19,11 +19,26 @@ class LongShortBuilder(nn.Module):
     def forward(self, x):
 
         # x
-        # [B,T,N,1]
+        # [B,T,N,D]
 
-        short_seq = x
+        B, T, N, D = x.shape
 
-        B, T, N, C = x.shape
+        # ----------------------------------
+        # Short-term sequence
+        # Recent Ts observations
+        # ----------------------------------
+
+        short_seq = x[
+            :,
+            -self.short_window:,
+            :,
+            :
+        ]
+
+        # ----------------------------------
+        # Long-term sequence
+        # Sample every g days
+        # ----------------------------------
 
         indices = []
 
@@ -32,13 +47,12 @@ class LongShortBuilder(nn.Module):
         for _ in range(
             self.long_length
         ):
+
             indices.append(
                 max(current, 0)
             )
 
-            current -= (
-                self.long_gap
-            )
+            current -= self.long_gap
 
         indices.reverse()
 

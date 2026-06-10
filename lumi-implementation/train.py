@@ -78,7 +78,7 @@ print(
 
 dataset = StockDataset(
     data_dir="data/LSE/data",
-    lookback=100
+    lookback=20
 )
 
 print(
