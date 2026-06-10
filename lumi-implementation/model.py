@@ -10,6 +10,7 @@ from long_short_builder import LongShortBuilder
 
 from static_graph_encoder import StaticGraphEncoder
 from static_fusion import StaticFusion
+from prediction_attention import PredictionAttention
 
 
 class LUMIStage1(nn.Module):
@@ -26,7 +27,7 @@ class LUMIStage1(nn.Module):
         # ------------------
 
         self.dynamic_graph = DynamicGraphBuilder(
-            feature_dim=1,
+            feature_dim=5,
             hidden_dim=32
         )
 
@@ -35,7 +36,7 @@ class LUMIStage1(nn.Module):
         # ------------------
 
         self.gat = GraphAttentionLayer(
-            in_features=1,
+            in_features=5,
             out_features=16
         )
 
@@ -56,6 +57,16 @@ class LUMIStage1(nn.Module):
 
         self.temporal_attention = (
             TemporalAttention(
+                feature_dim=16
+            )
+        )
+
+        # ------------------
+        # Prediction Attention
+        # ------------------
+
+        self.prediction_attention = (
+            PredictionAttention(
                 feature_dim=16
             )
         )
@@ -125,6 +136,10 @@ class LUMIStage1(nn.Module):
             H_short
         )
 
+        H_short = self.prediction_attention(
+            H_short
+        )
+
         # ------------------
         # Long Branch
         # ------------------
@@ -135,6 +150,10 @@ class LUMIStage1(nn.Module):
         )
 
         H_long = self.temporal_attention(
+            H_long
+        )
+
+        H_long = self.prediction_attention(
             H_long
         )
 

@@ -2,7 +2,7 @@ from dataset import StockDataset
 
 dataset = StockDataset(
     data_dir="data/LSE/data",
-    lookback=20
+    lookback=60
 )
 
 x, y = dataset[0]

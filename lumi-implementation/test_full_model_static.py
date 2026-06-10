@@ -5,9 +5,9 @@ model = LUMIStage1()
 
 x = torch.randn(
     2,      # batch
-    20,     # lookback
+    60,     # lookback
     542,    # stocks
-    1       # features
+    5       # features
 )
 
 cluster_matrix = torch.ones(

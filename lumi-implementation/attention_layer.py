@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class GraphAttentionLayer(nn.Module):
@@ -12,15 +11,21 @@ class GraphAttentionLayer(nn.Module):
     ):
         super().__init__()
 
-        self.W = nn.Linear(
+        self.query = nn.Linear(
             in_features,
             out_features,
             bias=False
         )
 
-        self.attn = nn.Linear(
-            2 * out_features,
-            1,
+        self.key = nn.Linear(
+            in_features,
+            out_features,
+            bias=False
+        )
+
+        self.value = nn.Linear(
+            in_features,
+            out_features,
             bias=False
         )
 
@@ -30,61 +35,47 @@ class GraphAttentionLayer(nn.Module):
         adjacency
     ):
 
-        # [B,N,5]
+        # node_features
+        # [B,N,F]
 
-        h = self.W(
+        Q = self.query(
             node_features
         )
 
-        B, N, Fdim = h.shape
-
-        h_i = h.unsqueeze(
-            2
-        ).repeat(
-            1,
-            1,
-            N,
-            1
+        K = self.key(
+            node_features
         )
 
-        h_j = h.unsqueeze(
-            1
-        ).repeat(
-            1,
-            N,
-            1,
-            1
+        V = self.value(
+            node_features
         )
 
-        concat = torch.cat(
-            [
-                h_i,
-                h_j
-            ],
-            dim=-1
+        scores = torch.matmul(
+            Q,
+            K.transpose(-1, -2)
         )
 
-        e = F.leaky_relu(
-            self.attn(concat)
-        ).squeeze(-1)
+        scores = scores / (
+            Q.shape[-1] ** 0.5
+        )
 
         mask = (
             adjacency == 0
         )
 
-        e = e.masked_fill(
+        scores = scores.masked_fill(
             mask,
             -1e9
         )
 
         alpha = torch.softmax(
-            e,
+            scores,
             dim=-1
         )
 
         out = torch.matmul(
             alpha,
-            h
+            V
         )
 
         return out
