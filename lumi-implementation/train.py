@@ -246,7 +246,7 @@ for epoch in range(epochs):
         )
 
         loss = (
-            mse_loss
+            0.2 * mse_loss
             +
             corr_loss
         )
