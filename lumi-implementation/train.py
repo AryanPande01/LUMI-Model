@@ -78,7 +78,7 @@ print(
 
 dataset = StockDataset(
     data_dir="data/LSE/data",
-    lookback=20
+    lookback=100
 )
 
 print(
@@ -235,9 +235,20 @@ for epoch in range(epochs):
             wiki_graph
         )
 
-        loss = criterion(
+        mae_loss = criterion(
             pred,
             y
+        )
+
+        corr_loss = ic_loss(
+            pred,
+            y
+        )
+
+        loss = (
+            0.2 * mae_loss
+            +
+            corr_loss
         )       
 
         loss.backward()
@@ -331,6 +342,13 @@ for epoch in range(epochs):
 
     print(
         f"Rank IC  : {epoch_rank_ic/batches:.6f}"
+    )
+
+    print(
+        "Lambda   :",
+        torch.sigmoid(
+            model.semantic_graph.alpha
+        ).item()
     )
 
     # ------------------------

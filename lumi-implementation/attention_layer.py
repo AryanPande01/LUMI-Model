@@ -88,6 +88,8 @@ class GraphAttentionLayer(nn.Module):
                 -1e9
             )
 
+            scores = scores + adjacency
+
             alpha = torch.softmax(
                 scores,
                 dim=-1
